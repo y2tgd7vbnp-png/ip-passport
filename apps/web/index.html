@@ -96,6 +96,9 @@ const I18N = {
     hashOk: "哈希一致", hashBad: "不一致",
     onchain: "链上存在", nochain: "链不可达（离线验证模式）",
     currentLic: "当时许可",
+    source: "来源",
+    localTime: "本地记录时间",
+    timeNote: "可信时间为链上区块时间；本地记录时间由记录方填写，未经独立验证。来源标签亦为自述元数据，未经独立验证。",
   },
   en: {
     steps: ["① Local attestation", "② Selective disclosure", "③ Pre-commercialisation check"],
@@ -119,6 +122,10 @@ const I18N = {
     hashOk: "hash matches", hashBad: "MISMATCH",
     onchain: "on-chain", nochain: "chain unreachable (offline mode)",
     currentLic: "Licence then",
+    source: "Source",
+    localTime: "Local record time",
+    timeNote: "The reliable timestamp is the on-chain block time; local record time is self-reported and unverified. Source labels are also self-declared metadata, not independently verified.",
+    timeNoteEn: "The reliable timestamp is the on-chain block time; local record time is self-reported and unverified. Source labels are also self-declared metadata, not independently verified.",
   },
 };
 let LANG = "zh";
@@ -223,6 +230,9 @@ navs.verify.onclick = (e) => { e.preventDefault(); setPage("verify"); };
 navs.check.onclick = (e) => { e.preventDefault(); setPage("check"); };
 document.getElementById("lang").onclick = (e) => { e.preventDefault(); LANG = LANG === "zh" ? "en" : "zh"; e.target.textContent = LANG === "zh" ? "EN" : "中文"; setPage(location.pathname.includes("check") ? "check" : "verify"); };
 
+function escapeHtml(v) {
+  return String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 function stepsHtml() {
   return `<div class="steps">${I18N[LANG].steps.map(s => `<div class="step"><b>${s.split(" ")[0]}</b>${s.split(" ").slice(1).join(" ")}</div>`).join("")}</div>`;
 }
@@ -273,7 +283,10 @@ async function verifyZip(file) {
         }
       } catch { /* 离线模式 */ }
       const tx = m.anchor?.txHash ? ` · <a class="txlink" target="_blank" href="${CFG.explorer}/tx/${m.anchor.txHash}">${m.anchor.txHash.slice(0, 18)}…</a>` : "";
-      html += `<li><b>${m.meta.kind}</b> ${m.meta.createdAtLocal}<br>
+      const srcTag = m.meta.tool ? ` · <span class="muted">${t("source")}: ${escapeHtml(m.meta.tool)}</span>` : "";
+      const noteTag = m.meta.note ? ` <span class="muted">— ${escapeHtml(m.meta.note)}</span>` : "";
+      html += `<li><b>${m.meta.kind}</b>${srcTag}<br>
+        <span class="muted">${t("localTime")}</span> ${m.meta.createdAtLocal}${noteTag}<br>
         ${t("hashOk")} ${ok ? `<span class="ok">✓</span>` : `<span class="bad">✗</span>`} · ${chainLine}${tx}</li>`;
     }
 
@@ -306,6 +319,7 @@ async function verifyZip(file) {
         <p class="muted" style="margin:.6rem 0 0;line-height:1.6">${LANG === "zh"
           ? "本结果仅表明：某一版本的指纹最晚在对应区块时间已经存在；不证明作者身份或版权归属。可作为电子证据材料之一，由争议处理机构依据所在法域规则审查。"
           : "This result establishes only that a version's fingerprint existed no later than the corresponding block time. It does not prove authorship or copyright ownership. It may serve as one item of electronic evidence, subject to review by the dispute-resolution body under the applicable jurisdiction."}</p>
+        <p class="muted" style="margin:.35rem 0 0;line-height:1.6">${t("timeNote")}</p>
       </div>
       ${disclaimerHtml()}
     </div>`;

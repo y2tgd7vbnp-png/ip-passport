@@ -30,8 +30,10 @@ program
   .argument("<paths...>", "文件路径")
   .requiredOption("--kind <kind>", "PROMPT | DRAFT | COMMIT | RELEASE")
   .option("--note <note>", "备注")
+  .option("--source <source>", "来源平台/工具，写入 meta.tool（5.5 预留字段），如 ChatGPT / Midjourney / Figma / manual")
+  .option("--ref <ref>", "平台侧可核对标识（分享链接 / commit 哈希 / 任务编号），写入 meta.note")
   .option("--queue", "只入队不上链")
-  .action(async (paths, opts) => { await snapshotCmd(paths, opts.kind, opts.note ?? "", opts.queue ?? false); });
+  .action(async (paths, opts) => { await snapshotCmd(paths, opts.kind, opts.note ?? "", opts.queue ?? false, opts.source ?? "", opts.ref ?? ""); });
 
 program
   .command("license")

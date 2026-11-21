@@ -15,7 +15,7 @@ async function fileDigest(path: string): Promise<Hex32> {
   return sha256Hex(new Uint8Array(buf)) as Promise<Hex32>;
 }
 
-export async function snapshotCmd(paths: string[], kind: string, note: string, queue: boolean) {
+export async function snapshotCmd(paths: string[], kind: string, note: string, queue: boolean, source = "", ref = "") {
   if (!KIND_ORDER.includes(kind as typeof KIND_ORDER[number])) {
     throw new Error(`--kind 必须是 ${KIND_ORDER.slice(0, 4).join(" | ")}`);
   }
@@ -36,10 +36,13 @@ export async function snapshotCmd(paths: string[], kind: string, note: string, q
   const { root: fileRoot } = await buildMerkle(leaves);
 
   // 3. metaHash + versionRoot（5.3）
-  const meta = {
+  // 5.5 已预留字段：tool 承载来源平台；平台侧可核对标识并入 note（不新增 schema 字段）
+  const composedNote = ref ? (note ? `${note} | ref: ${ref}` : `ref: ${ref}`) : note;
+  const meta: { kind: "PROMPT" | "DRAFT" | "COMMIT" | "RELEASE"; createdAtLocal: string; note: string; tool?: string } = {
     kind: kind as "PROMPT" | "DRAFT" | "COMMIT" | "RELEASE",
     createdAtLocal: new Date().toISOString(),
-    note,
+    note: composedNote,
+    ...(source ? { tool: source } : {}),
   };
   const metaHash = await computeMetaHash(meta);
   const versionRoot = await computeVersionRoot(cfg.workId, cfg.headVersion, fileRoot, metaHash);
@@ -64,6 +67,7 @@ export async function snapshotCmd(paths: string[], kind: string, note: string, q
   if (queue) {
     console.log("✓ 已入队（ipp flush 时批量上链）");
     console.log("  versionRoot:", versionRoot);
+    if (source) console.log("  来源:", source);
     return;
   }
 
@@ -98,6 +102,8 @@ export async function snapshotCmd(paths: string[], kind: string, note: string, q
 
   console.log("✓ 版本已锚定");
   console.log("  versionRoot:", versionRoot);
+  if (source) console.log("  来源:", source);
+  if (ref) console.log("  平台标识:", ref);
   console.log("  tx:", hash);
   console.log("  block:", Number(receipt.blockNumber), "时间:", new Date(Number(block.timestamp) * 1000).toISOString());
 }

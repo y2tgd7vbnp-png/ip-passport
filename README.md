@@ -30,6 +30,7 @@ manifest(ipp.version.v1) ──canonical JSON──> versionRoot = SHA256("IPP-V
 - **原文件永不上链**，链上只有 32 字节哈希指纹
 - **版本链**：每个新版本锚定时引用 `prevVersionRoot`，形成可验证的因果链
 - **证据包**：`ipp export` 打包版本链 + 可选披露文件 + Merkle 证明，第三方无需信任任何服务器即可验证
+- **来源标注**：`--source` 写入 5.5 预留的 `meta.tool`，`--ref` 把平台侧标识并入 `meta.note`；证据包与时间线按来源显示。**来源标签由记录方填写，未经独立验证；本地记录时间不是可信时间戳，可信时间以链上区块时间为准**
 - **许可只追加**：`license set` 不覆盖历史，`getLicenseAt(workId, t)` 可查任意历史时间点
 
 ## Hash & data format / 哈希与数据格式（严格规范）
@@ -66,7 +67,8 @@ export IPP_CHAIN_ID=10143
 # 演示流程
 ipp init --repo github.com/you/your-repo     # 注册作品（workId = keccak256(owner‖salt)）
 ipp license set MIT                            # 声明许可
-ipp snapshot draft.md --kind DRAFT --note 初稿 # 锚定版本（PROMPT/DRAFT/DATA/CODE/FINAL）
+ipp snapshot draft.md --kind DRAFT --note 初稿 # 锚定版本（PROMPT/DRAFT/COMMIT/RELEASE）
+ipp snapshot chat.md --kind PROMPT --source ChatGPT --ref https://chatgpt.com/share/…  # 标注来源平台与平台侧可核对标识
 ipp license set BUSL-1.1 --terms terms.md --contact mailto:you@x.com   # 许可变更（历史保留）
 ipp log                                        # 版本链 + 链上状态
 ipp export <versionRoot> --disclose draft.md -o evidence.zip  # 导出证据包

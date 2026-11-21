@@ -35,20 +35,22 @@ Local-first provenance & licence state layer for AI-era creative work: files nev
 | 4 | 时间点许可查询 | 许可只追加不覆盖，`getLicenseAt(workId, t)` 可回溯任意历史时点；MIT → BUSL-1.1 变更前后查询结果不同（已实测） |
 | 5 | 下游合规闭环 | `ExampleSkillMarket` 上架时按当时许可给出 APPROVED / PENDING / NEEDS_REVIEW，并可用 `recordListingCheck` 把检查结论写回链上留痕 |
 | 6 | Monad 并行友好 | workId 隔离存储、只追加、无链上循环、每作品状态常量大小，适配并行执行 |
-| 7 | 法律表述严谨 | 全站固定免责声明，结论区明确「仅表明指纹最晚于对应区块时间已存在；不证明作者身份或版权归属」，义务提示只给列表与风险等级、不写「可/不可商用」结论 |
+| 7 | 来源标注（P0-A） | `--source` / `--ref` 记录来源平台与平台侧可核对标识，时间线按来源显示；明确标注来源标签为自述元数据、本地时间非可信时间戳 | 
+| 8 | 法律表述严谨 | 全站固定免责声明，结论区明确「仅表明指纹最晚于对应区块时间已存在；不证明作者身份或版权归属」，义务提示只给列表与风险等级、不写「可/不可商用」结论 |
 
 ---
 
 ## 四、演示信息（评审可直接操作）
 
 - **在线演示**：`https://ip-passport.app.workbuddy.host/?sharecode=JEILIW2FB2`
-  - `/verify`：拖入 `docs/demo/monad-evidence.zip` → 2 个版本哈希重算 ✓ + Monad 链上核对 ✓ + draft.md 叶子与 Merkle 证明 ✓
+  - `/verify`：拖入 `docs/demo/monad-evidence.zip` → **4 个版本**哈希重算 ✓ + Monad 链上核对 ✓ + draft.md 叶子与 Merkle 证明 ✓；时间线显示后两条的来源 ChatGPT / Midjourney 及平台标识
   - `/check`：输入 `github.com/iris/ip-passport-demo` → BUSL-1.1 / SOURCE_AVAILABLE / HIGH / 需查看条款；时间点填 `1795251890` → 回到 MIT / PERMISSIVE
 - **Monad Testnet（chainId 10143）**
   - IPPassportRegistry `0x22b770e03e986b1133a209a3de09438716ef183d`
   - ExampleSkillMarket `0xb4788bc94c1da717f9b71241eb71878971ae80e6`
   - 浏览器 `https://testnet.monadexplorer.com`
-- **链上演示数据**：workId `0x01b7a4663cb10deca0ab29231fbd52c1522f4893fbf55138f46911fdd530ddc9`；PROMPT @ 区块 81536861、DRAFT @ 区块 81536881；许可历史 MIT(1795251884) → BUSL-1.1(1795251904)
+- **链上演示数据**：workId `0x01b7a4663cb10deca0ab29231fbd52c1522f4893fbf55138f46911fdd530ddc9`；4 个版本 PROMPT@81536861、DRAFT@81536881、PROMPT(ChatGPT)@81544038、DRAFT(Midjourney)@81544057；许可历史 MIT(1795251884) → BUSL-1.1(1795251904)
+- **自动归拢 / 文件夹监听 / 浏览器插件 / zkTLS 属路线图**，详见 `docs/需求补充-自动归拢与来源证明.md`；提交材料中不得写成已实现
 
 **30 秒演示脚本**：打开在线链接 → 拖入证据包 → 展示「全部验证通过 + 链上存在」→ 切到许可查询 → 输仓库名得 BUSL-1.1 → 改时间点得 MIT → 指给评审看底部免责声明。
 

@@ -95,6 +95,8 @@ export async function exportCmd(versionRoot: string, discloseGlob?: string, reda
     versions: path.map((m) => ({
       versionRoot: m.versionRoot,
       kind: m.meta.kind,
+      source: m.meta.tool ?? null,
+      note: m.meta.note ?? "",
       createdAtLocal: m.meta.createdAtLocal,
       txHash: m.anchor.txHash ?? null,
       blockNumber: m.anchor.blockNumber ?? null,
