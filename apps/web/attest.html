@@ -105,8 +105,8 @@ workInput.addEventListener("change", async () => {
   if (!v) return;
   try {
     if (v.startsWith("github.com/")) {
-      const { keccak256 } = await import("https://cdn.jsdelivr.net/npm/js-sha3@0.9.3/+esm");
-      const repoKey = "0x" + keccak256(v.toLowerCase());
+      const { keccak256, toHex } = await import("https://esm.sh/viem@2");
+      const repoKey = keccak256(toHex(v.toLowerCase()));
       const raw = await call(CFG.registry, "0xbc625059" + repoKey.slice(2).padStart(64, "0"));
       const b = unhex(raw); const dv = new DataView(b.buffer, b.byteOffset);
       const cnt = Number(dv.getBigUint64(32 + 24));
@@ -140,7 +140,7 @@ document.getElementById("files").addEventListener("change", async () => {
   window.__fileRoot = root;
 });
 
-document.getElementById("preview").parentElement.addEventListener("input", async () => {
+document.addEventListener("input", async () => {
   const root = window.__fileRoot;
   if (!root || !workId) return;
   const meta = { kind: document.getElementById("kind").value, createdAtLocal: new Date().toISOString(), note: document.getElementById("note").value || "", ...(document.getElementById("source").value ? { tool: document.getElementById("source").value } : {}) };

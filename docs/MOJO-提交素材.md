@@ -89,7 +89,8 @@ Local-first provenance & licence state layer for AI-era creative work: files nev
   - IPPassportRegistry `0x22b770e03e986b1133a209a3de09438716ef183d`
   - ExampleSkillMarket `0xb4788bc94c1da717f9b71241eb71878971ae80e6`
   - 浏览器 `https://testnet.monadexplorer.com`
-- **链上演示数据**：workId `0x01b7a4663cb10deca0ab29231fbd52c1522f4893fbf55138f46911fdd530ddc9`；4 个版本 PROMPT@81536861、DRAFT@81536881、PROMPT(ChatGPT)@81544038、DRAFT(Midjourney)@81544057；许可历史 MIT(1795251884) → BUSL-1.1(1795251904)
+- **链上演示数据**：workId `0x01b7a4663cb10deca0ab29231fbd52c1522f4893fbf55138f46911fdd530ddc9`；5 个版本 PROMPT@81536861、DRAFT@81536881、PROMPT(ChatGPT)@81544038、DRAFT(Midjourney)@81544057、DRAFT(网页存证页实测)@81551229；许可历史 MIT(1795251884) → BUSL-1.1(1795251904)
+- **创作者存证入口（新增，提交后发布）**：`attest.html` 浏览器内存证页已本地完成并实测（作品定位 / 文件哈希管线 / versionRoot 预览 / 无钱包提示 / 等价签名交易链上 success）；钱包 UI 待真实插件环境端到端验证后与主页一起发布
 - **自动归拢 / 文件夹监听 / 浏览器插件 / zkTLS 属路线图**，详见 `docs/需求补充-自动归拢与来源证明.md`；提交材料中不得写成已实现
 
 **30 秒演示脚本**：打开在线链接 → 拖入证据包 → 展示「全部验证通过 + 链上存在」→ 切到许可查询 → 输仓库名得 BUSL-1.1 → 改时间点得 MIT → 指给评审看底部免责声明。
