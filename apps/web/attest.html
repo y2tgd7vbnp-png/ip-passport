@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>存证 · IP Passport</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font-sans, system-ui, -apple-system, "PingFang SC", sans-serif); background: transparent; color: var(--color-text-primary, #1a1a1a); }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 15px; font-weight: 500; }
+h2 { font-size: 14px; font-weight: 500; margin: 20px 0 8px; }
+.card { border: 0.5px solid var(--color-border-tertiary, rgba(0,0,0,.15)); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; background: var(--color-background-secondary, #fff); }
+.dev { border-color: #BA7517; }
+.dev b { color: #BA7517; }
+.muted { color: var(--color-text-secondary, #666); font-size: 12px; }
+input[type=text], select, textarea { width: 100%; padding: 8px 10px; border-radius: 8px; border: 0.5px solid var(--color-border-secondary, rgba(0,0,0,.3)); background: var(--color-background-primary, #fff); color: inherit; margin: 4px 0 10px; font-size: 13px; }
+button { padding: 9px 16px; border-radius: 8px; border: none; background: #185FA5; color: #fff; font-size: 13px; cursor: pointer; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.ok { color: var(--color-text-success, #0F6E56); } .bad { color: var(--color-text-danger, #A32D2D); }
+.disc { font-size: 12px; color: var(--color-text-secondary, #666); border-top: 0.5px solid var(--color-border-tertiary, rgba(0,0,0,.15)); margin-top: 20px; padding-top: 10px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+<h1>IP Passport · 创作者存证（浏览器内，文件不上传）</h1>
+<div class="card dev"><b>开发中，尚未上线。</b> 本页在浏览器本地计算指纹，只把 32 字节 versionRoot 发往链上；原文件、盐、路径均不上传。钱包签名部分待实测。</div>
+
+<h2>1 · 作品</h2>
+<div class="card">
+<input type="text" id="workInput" placeholder="0x… workId，或 github.com/owner/repo">
+<div class="muted">github 地址将先查链上 getWorksByRepo 定位 workId（repoKey 用 js-sha3 计算）</div>
+<div id="workInfo" class="muted"></div>
+</div>
+
+<h2>2 · 文件（可多选，只在本机读取）</h2>
+<div class="card">
+<input type="file" id="files" multiple>
+<div id="fileInfo" class="muted"></div>
+</div>
+
+<h2>3 · 版本信息</h2>
+<div class="card">
+<select id="kind">
+<option value="PROMPT">PROMPT</option><option value="DRAFT" selected>DRAFT</option>
+<option value="COMMIT">COMMIT</option><option value="RELEASE">RELEASE</option>
+</select>
+<input type="text" id="source" placeholder="来源平台/工具，如 Photoshop / ChatGPT（写入 meta.tool）">
+<input type="text" id="ref" placeholder="平台侧可核对标识，如分享链接 / commit 哈希">
+<textarea id="note" rows="2" placeholder="备注"></textarea>
+</div>
+
+<h2>4 · 本地计算预览</h2>
+<div class="card"><div id="preview" class="muted">选择文件后显示 salt / leaf / fileRoot / versionRoot（全在浏览器内算好）</div></div>
+
+<h2>5 · 连接钱包并锚定</h2>
+<div class="card">
+<button id="connect">连接钱包</button>
+<button id="anchor" disabled>签名并锚定 anchorVersion</button>
+<div id="txInfo" class="muted"></div>
+</div>
+
+<div class="disc">本页仅提供哈希与区块链记录的技术比对。结果只能说明：某一版本的指纹最晚在对应区块时间已经存在；不证明作者身份或版权归属。可信时间为链上区块时间；本地记录时间与来源标签由记录方填写，未经独立验证。本工具不构成法律意见，不替代版权登记或司法程序。</div>
+</main>
+<script type="module">
+const enc = new TextEncoder();
+async function sha256(data) { return new Uint8Array(await crypto.subtle.digest("SHA-256", data)); }
+function hex(b) { return "0x" + [...b].map(x => x.toString(16).padStart(2, "0")).join(""); }
+function unhex(h) { h = h.replace(/^0x/, ""); const o = new Uint8Array(h.length / 2); for (let i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16); return o; }
+function canon(v) { return Array.isArray(v) ? v.map(canon) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).filter(([, x]) => x !== undefined).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([k, x]) => [k, canon(x)])) : v; }
+function escapeHtml(v) { return String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+async function leafOf(saltHex, digestHex) { return hex(await sha256(new Uint8Array([0x00, ...unhex(saltHex), ...unhex(digestHex)]))); }
+async function metaHashOf(meta) { return hex(await sha256(enc.encode(JSON.stringify(canon(meta))))); }
+async function versionRootOf(workId, prev, fileRoot, metaHash) {
+  return hex(await sha256(new Uint8Array([...enc.encode("IPP-V1"), ...unhex(workId), ...unhex(prev), ...unhex(fileRoot), ...unhex(metaHash)])));
+}
+const cmp = (a, b) => { const x = unhex(a), y = unhex(b); for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i] !== y[i]) return x[i] - y[i]; return x.length - y.length; };
+async function merkleRoot(leaves) {
+  if (leaves.length === 1) return leaves[0];
+  let layer = leaves.slice().sort(cmp);
+  while (layer.length > 1) {
+    const next = [];
+    for (let i = 0; i < layer.length; i += 2) {
+      if (i + 1 >= layer.length) { next.push(layer[i]); break; }
+      const [a, b] = cmp(layer[i], layer[i + 1]) <= 0 ? [layer[i], layer[i + 1]] : [layer[i + 1], layer[i]];
+      next.push(hex(await sha256(new Uint8Array([0x01, ...unhex(a), ...unhex(b)]))));
+    }
+    layer = next;
+  }
+  return layer[0];
+}
+const CFG = { rpc: "https://testnet-rpc.monad.xyz", chainId: 10143, registry: "", preset: {} };
+try { const c = await (await fetch("./config.json")).json(); if (c.monadRpc) CFG.rpc = c.monadRpc; if (c.registryAddress) CFG.registry = c.registryAddress; CFG.preset = c.presetRepoKeys || {}; } catch {}
+const rpc = async (method, params) => { const r = await fetch(CFG.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }) }); const d = await r.json(); if (d.error) throw new Error(d.error.message); return d.result; };
+const call = (to, data) => rpc("eth_call", [{ to, data }, "latest"]);
+
+const workInput = document.getElementById("workInput");
+const workInfo = document.getElementById("workInfo");
+let workId = null, prevRoot = "0x" + "00".repeat(32);
+const files = [], fileDigests = [];
+
+workInput.addEventListener("change", async () => {
+  const v = workInput.value.trim();
+  if (!v) return;
+  try {
+    if (v.startsWith("github.com/")) {
+      const { keccak256 } = await import("https://cdn.jsdelivr.net/npm/js-sha3@0.9.3/+esm");
+      const repoKey = "0x" + keccak256(v.toLowerCase());
+      const raw = await call(CFG.registry, "0xbc625059" + repoKey.slice(2).padStart(64, "0"));
+      const b = unhex(raw); const dv = new DataView(b.buffer, b.byteOffset);
+      const cnt = Number(dv.getBigUint64(32 + 24));
+      if (!cnt) throw new Error("该仓库暂无已注册作品");
+      workId = hex(b.slice(64, 96));
+      workInfo.innerHTML = `workId <b>${escapeHtml(workId)}</b>（repoKey ${repoKey.slice(0, 18)}…）`;
+    } else {
+      workId = v;
+      workInfo.innerHTML = `workId <b>${escapeHtml(workId)}</b>`;
+    }
+    const raw = await call(CFG.registry, "0x30266537" + workId.slice(2).padStart(64, "0"));
+    const b = unhex(raw); const dv = new DataView(b.buffer, b.byteOffset);
+    const head = hex(b.slice(96, 128));
+    if (head !== "0x" + "00".repeat(32)) { prevRoot = head; workInfo.innerHTML += `<br>链上 headVersion <b>${head.slice(0, 18)}…</b>（将作为 prevVersionRoot）`; }
+  } catch (e) { workInfo.innerHTML = `<span class="bad">${escapeHtml(e.message)}</span>`; }
+});
+
+document.getElementById("files").addEventListener("change", async () => {
+  files.length = 0; fileDigests.length = 0;
+  const sel = document.getElementById("files").files;
+  for (const f of sel) {
+    const buf = new Uint8Array(await f.arrayBuffer());
+    const digest = hex(await sha256(buf));
+    const salt = hex(crypto.getRandomValues(new Uint8Array(32)));
+    const leaf = await leafOf(salt, digest);
+    files.push({ name: f.name, size: f.size, digest, salt, leaf });
+  }
+  const root = await merkleRoot(files.map(f => f.leaf));
+  document.getElementById("fileInfo").innerHTML = `${files.length} 个文件 · fileRoot <b>${root.slice(0, 18)}…</b><br>` +
+    files.map(f => `<span class="muted">${escapeHtml(f.name)}（${f.size} B）leaf ${f.leaf.slice(0, 14)}…</span>`).join("<br>");
+  window.__fileRoot = root;
+});
+
+document.getElementById("preview").parentElement.addEventListener("input", async () => {
+  const root = window.__fileRoot;
+  if (!root || !workId) return;
+  const meta = { kind: document.getElementById("kind").value, createdAtLocal: new Date().toISOString(), note: document.getElementById("note").value || "", ...(document.getElementById("source").value ? { tool: document.getElementById("source").value } : {}) };
+  const mh = await metaHashOf(meta);
+  const vr = await versionRootOf(workId, prevRoot, root, mh);
+  document.getElementById("preview").innerHTML =
+    `metaHash <b>${mh.slice(0, 18)}…</b><br>versionRoot <b>${vr.slice(0, 18)}…</b><br>prevVersionRoot <b>${prevRoot.slice(0, 18)}…</b>`;
+  window.__vr = vr;
+});
+
+const connect = document.getElementById("connect");
+const anchor = document.getElementById("anchor");
+const txInfo = document.getElementById("txInfo");
+connect.onclick = async () => {
+  if (!window.ethereum) { txInfo.innerHTML = '<span class="bad">未检测到钱包插件（MetaMask 等）。请安装后刷新。</span>'; return; }
+  try {
+    const accs = await window.ethereum.request({ method: "eth_requestAccounts" });
+    txInfo.innerHTML = `已连接 <b>${escapeHtml(accs[0])}</b>`;
+    anchor.disabled = false;
+    window.__wallet = window.ethereum;
+  } catch (e) { txInfo.innerHTML = `<span class="bad">${escapeHtml(e.message || e)}</span>`; }
+};
+anchor.onclick = async () => {
+  if (!window.__vr) { txInfo.innerHTML = '<span class="bad">请先完成 1–4 步</span>'; return; }
+  try {
+    const { createWalletClient, createPublicClient, custom, http, encodeFunctionData } = await import("https://esm.sh/viem@2");
+    const wc = createWalletClient({ chain: { id: CFG.chainId, name: "monad-testnet", nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 }, rpcUrls: { default: { http: [CFG.rpc] } } }, transport: custom(window.__wallet) });
+    const [account] = await wc.getAddresses();
+    const data = encodeFunctionData({
+      abi: [{ type: "function", name: "anchorVersion", stateMutability: "nonpayable", inputs: [{ name: "workId", type: "bytes32" }, { name: "versionRoot", type: "bytes32" }, { name: "prevRoot", type: "bytes32" }, { name: "kind", type: "uint8" }], outputs: [] }],
+      functionName: "anchorVersion",
+      args: [workId, window.__vr, prevRoot, ["PROMPT", "DRAFT", "COMMIT", "RELEASE"].indexOf(document.getElementById("kind").value)],
+    });
+    txInfo.innerHTML = "请在钱包中确认交易…";
+    const hash = await wc.sendTransaction({ account, to: CFG.registry, data });
+    txInfo.innerHTML = `已广播 <a href="https://testnet.monadexplorer.com/tx/${hash}" target="_blank">${hash.slice(0, 20)}…</a>（等待出块后可用 ipp verify 核对；本页未保存本地清单，建议同时用 ipp snapshot 归档）`;
+  } catch (e) { txInfo.innerHTML = `<span class="bad">${escapeHtml(e.message || e)}</span>`; }
+};
+</script>
+</body>
+</html>
