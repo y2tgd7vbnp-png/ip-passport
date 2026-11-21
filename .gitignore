@@ -10,3 +10,4 @@ deployments/*.local.json
 bench/results/
 *.log
 .DS_Store
+packages/contracts/artifacts/
