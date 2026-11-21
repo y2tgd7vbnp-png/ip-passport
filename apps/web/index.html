@@ -63,7 +63,7 @@ const CFG = {
   registry: (window.registryAddress) || "", // 由 config.js 注入
 };
 try {
-  const cfgResp = await fetch('./config.json');
+  const cfgResp = await fetch('./config.json' + location.search);
   if (cfgResp.ok) {
     const cfg = await cfgResp.json();
     if (cfg.monadRpc) CFG.rpc = cfg.monadRpc;
@@ -222,6 +222,8 @@ function decodeTuple(raw) {
 // ───────────────── 页面路由 ─────────────────
 const app = document.getElementById("app");
 const navs = { verify: document.getElementById("nav-verify"), check: document.getElementById("nav-check") };
+const navAttest = document.getElementById("nav-attest");
+if (navAttest) navAttest.href = "./attest.html" + location.search;
 function setPage(name) {
   for (const k in navs) navs[k].classList.toggle("on", k === name);
   history.replaceState(null, "", name === "verify" ? "/verify" : "/check");
