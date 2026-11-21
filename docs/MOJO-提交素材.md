@@ -30,6 +30,8 @@ Local-first provenance & licence state layer for AI-era creative work: files nev
 **本产品不是「存证网站」**：网站不接收、不托管、不存储任何文件，只是验证器。
 
 1. **创作者先在本机完成存证**：`ipp init` → `ipp snapshot`（本地算哈希 + 链上锚定）→ `ipp license set`。原文件不出本机，链上只有 `versionRoot`、区块时间、许可声明。
+   - **具体位置**：在作品项目目录里跑 `ipp init`，生成 `.ipp/`（`config.json` 存 workId / 合约地址 / headVersion，`versions/<versionRoot>.json` 存每版清单含文件哈希与盐，`queue/` 存待批量上链项）；原文件原地不动；`.ipp-claim.json` 放仓库根目录供归属声明；`.ipp/` 被自动加入 `.gitignore`（含盐清单不推公开仓库）。
+   - **当前只有 CLI，没有图形界面；网页端不提供存证入口**（前端写操作为 0）。
 2. **创作者导出证据包并线下交付**：`ipp export` 生成 evidence.zip，通过邮件 / 网盘 / 当面交给对方，**不经过网站**。
 3. **对方在 `/verify` 拖入 zip**：浏览器内解包重算哈希，用 `eth_call` 只读核对链上记录；文件不离开浏览器。看到版本时间线、哈希一致性、链上存在、当时许可与免责声明。
 4. **另一入口 `/check`**：知道 workId 或 GitHub 仓库地址即可直接查当前 / 历史时间点的许可，无需证据包；但它查的是**许可状态**，不是「有没有存证」，也不返回作品文件列表。
