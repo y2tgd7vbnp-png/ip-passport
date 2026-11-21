@@ -90,8 +90,8 @@ const I18N = {
     commercial: "商用授权",
     contact: "联系方式",
     effFrom: "生效自",
-    verified: "已验证归属",
-    unverified: "未验证",
+    verified: "指纹已核对",
+    unverified: "未核对",
     disclaimer: "本提示依据作者在链上声明的许可状态自动生成，仅供参考，不构成法律意见。",
     hashOk: "哈希一致", hashBad: "不一致",
     onchain: "链上存在", nochain: "链不可达（离线验证模式）",
@@ -113,8 +113,8 @@ const I18N = {
     commercial: "Commercial licence",
     contact: "Contact",
     effFrom: "Effective from",
-    verified: "Ownership verified",
-    unverified: "Unverified",
+    verified: "Fingerprint checked",
+    unverified: "Not checked",
     disclaimer: "This notice is generated automatically from the licence status declared on-chain by the author. For reference only; not legal advice.",
     hashOk: "hash matches", hashBad: "MISMATCH",
     onchain: "on-chain", nochain: "chain unreachable (offline mode)",
@@ -303,6 +303,9 @@ async function verifyZip(file) {
       <div class="card" style="background:${allOk ? "#f0fdf4" : "#fef2f2"};border-color:${allOk ? "#bbf7d0" : "#fecaca"}">
         <h2 style="color:${allOk ? "var(--ok)" : "var(--bad)"}">${allOk ? "✓ " + (LANG === "zh" ? "全部验证通过" : "All checks passed") : "✗ " + (LANG === "zh" ? "存在不一致项" : "Mismatches found")}</h2>
         <span class="muted">${LANG === "zh" ? "文件未离开浏览器 · " : "Files never left your browser · "}</span>
+        <p class="muted" style="margin:.6rem 0 0;line-height:1.6">${LANG === "zh"
+          ? "本结果仅表明：某一版本的指纹最晚在对应区块时间已经存在；不证明作者身份或版权归属。可作为电子证据材料之一，由争议处理机构依据所在法域规则审查。"
+          : "This result establishes only that a version's fingerprint existed no later than the corresponding block time. It does not prove authorship or copyright ownership. It may serve as one item of electronic evidence, subject to review by the dispute-resolution body under the applicable jurisdiction."}</p>
       </div>
       ${disclaimerHtml()}
     </div>`;

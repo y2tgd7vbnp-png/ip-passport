@@ -96,9 +96,19 @@ Chain ID `10143` · RPC `https://testnet-rpc.monad.xyz` · Explorer `https://tes
 
 `ExampleSkillMarket` 演示下游消费方如何消费许可状态：上架 AI Skill 时按当时许可自动给出 `APPROVED / PENDING / NEEDS_REVIEW`，并把结论写回链上（`recordListingCheck`），形成商业化前的合规闭环。
 
+## FAQ / 常见疑问
+
+**Q: 许可查询会生成一个「上链公证」吗？**
+不会。`ipp check` 与 `/check` 页是**纯只读**：走 `getLicenseAt` 的 `view` 调用 / `eth_call`，零交易、零 gas、不写入任何链上状态，也不连接钱包。它只是把作者此前已锚定的许可记录读出来，附上第 9 节的义务提示与风险等级。链上任何记录都不是「公证」——公证是公证机构依法定程序出具的公证文书，本工具不提供、也不宣称具有公证效力。
+
+**Q: 那什么操作会上链？**
+`init`（注册）、`snapshot`（版本锚定）、`anchorBatch`、`license set`（许可变更）、`declareDerivative`、`transferWork`、`recordListingCheck`、`ExampleSkillMarket.listSkill`。其中 `recordListingCheck` 可把「某平台于某时对某作品做过一次上架检查及结论」写回链上，形成**查询行为的留痕**，但性质仍是自声明的链上记录，不是公证。
+
 ## Disclaimer / 免责声明
 
-本工具提供的是哈希与区块链记录的**技术比对与存证**，不构成法律意见，不替代版权登记或司法程序。许可义务提示依据作者链上声明自动生成，仅供参考。/ This tool provides technical comparison and anchoring of cryptographic records only; it is not legal advice and does not replace copyright registration or judicial proceedings. Licence obligation hints are auto-generated from on-chain declarations by the author and are for reference only.
+本工具仅提供哈希与区块链记录的**技术比对**。其结果只能说明：**某一版本的指纹最晚在对应区块时间已经存在**；不证明作者身份，不证明拥有版权，也不意味着「链上登记即获得版权保护」或「具有法律效力」。相关记录可作为电子证据材料之一，由争议处理机构依据所在法域规则审查，不替代版权登记或司法程序。许可义务提示依据作者链上声明自动生成，统一给出义务列表与风险等级，不作出「可以商用 / 不能商用」的结论，仅供参考，不构成法律意见。
+
+This tool provides **technical comparison of cryptographic records only**. Its output establishes solely that a version's fingerprint existed no later than the corresponding block time; it does not prove authorship or copyright ownership, and does not imply that on-chain registration confers copyright protection or legal effect. Such records may serve as one item of electronic evidence, subject to review by the dispute-resolution body under the applicable jurisdiction; they do not replace copyright registration or judicial proceedings. Licence obligation hints are auto-generated from the author's on-chain declarations using a fixed obligation list and risk level, never a "commercial use permitted / prohibited" conclusion. For reference only; not legal advice.
 
 ---
 

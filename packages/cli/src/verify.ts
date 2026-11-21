@@ -78,7 +78,8 @@ export async function verifyCmd(zipPath: string) {
 
   console.log("\n" + "═".repeat(56));
   console.log(allOk ? "结论：✓ 全部验证通过" : "结论：✗ 存在不一致项");
-  console.log("本报告为哈希与链上记录的技术比对，不构成法律意见。");
+  console.log("本报告为哈希与链上记录的技术比对，仅表明该版本指纹最晚于对应区块时间已存在；不证明作者身份或版权归属，可作为电子证据材料之一，由争议处理机构依据所在法域规则审查。");
+  console.log("本提示依据作者在链上声明的许可状态自动生成，仅供参考，不构成法律意见。");
 }
 
 function hexToBytesLocal(hex: string): Uint8Array {
