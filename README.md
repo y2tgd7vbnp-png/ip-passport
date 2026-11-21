@@ -43,6 +43,11 @@ manifest(ipp.version.v1) ──canonical JSON──> versionRoot = SHA256("IPP-V
 | versionRoot | `SHA256("IPP-V1" ‖ workId ‖ prevVersionRoot ‖ fileRoot ‖ metaHash)` |
 | manifest | JSON，键名排序、无空格的规范化序列化（canonical JSON），schema `ipp.version.v1` |
 
+## Links / 链接
+
+- 在线演示：`https://ip-passport.app.workbuddy.host/?sharecode=JEILIW2FB2`
+- GitHub：`https://github.com/y2tgd7vbnp-png/ip-passport`
+
 ## Repo layout / 仓库结构
 
 ```
@@ -77,6 +82,8 @@ ipp check github.com/you/your-repo --at <unix> # 查询任意时间点许可
 ```
 
 前端：`apps/web/` 直接静态托管，拖入 evidence.zip 即可在浏览器内完成全部哈希重算与 Merkle 验证（文件不离开浏览器）。
+
+**创作者存证页**：`apps/web/attest.html`（开发中）——浏览器内计算指纹、连接钱包、只把 32 字节 versionRoot 发往链上；可下载清单 JSON 与 CLI 档案衔接。
 
 ## Deployed on Monad Testnet / 已部署
 

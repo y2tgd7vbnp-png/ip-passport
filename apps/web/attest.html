@@ -52,7 +52,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 </div>
 
 <h2>4 · 本地计算预览</h2>
-<div class="card"><div id="preview" class="muted">选择文件后显示 salt / leaf / fileRoot / versionRoot（全在浏览器内算好）</div></div>
+<div class="card"><div id="preview" class="muted">选择文件后显示 salt / leaf / fileRoot / versionRoot（全在浏览器内算好）</div>
+<button id="dlManifest" disabled style="margin-top:8px">下载清单 JSON（存到 .ipp/versions/ 与 CLI 档案衔接）</button></div>
 
 <h2>5 · 连接钱包并锚定</h2>
 <div class="card">
@@ -140,16 +141,37 @@ document.getElementById("files").addEventListener("change", async () => {
   window.__fileRoot = root;
 });
 
-document.addEventListener("input", async () => {
+async function buildManifest() {
   const root = window.__fileRoot;
-  if (!root || !workId) return;
+  if (!root || !workId) return null;
   const meta = { kind: document.getElementById("kind").value, createdAtLocal: new Date().toISOString(), note: document.getElementById("note").value || "", ...(document.getElementById("source").value ? { tool: document.getElementById("source").value } : {}) };
   const mh = await metaHashOf(meta);
   const vr = await versionRootOf(workId, prevRoot, root, mh);
+  return {
+    schema: "ipp.version.v1", workId, versionRoot: vr, prevVersionRoot: prevRoot, fileRoot: root, meta,
+    files: files.map((f) => ({ path: f.name, fileDigest: f.digest, salt: f.salt, leaf: f.leaf })),
+    anchor: { mode: "single" },
+    license: { spdx: "", termsHash: null },
+  };
+}
+document.addEventListener("input", async () => {
+  const m = await buildManifest();
+  if (!m) return;
   document.getElementById("preview").innerHTML =
-    `metaHash <b>${mh.slice(0, 18)}…</b><br>versionRoot <b>${vr.slice(0, 18)}…</b><br>prevVersionRoot <b>${prevRoot.slice(0, 18)}…</b>`;
-  window.__vr = vr;
+    `metaHash <b>${m.versionRoot.slice(0, 2) === "0x" ? "" : ""}…</b><br>versionRoot <b>${m.versionRoot.slice(0, 18)}…</b><br>prevVersionRoot <b>${prevRoot.slice(0, 18)}…</b>`;
+  window.__vr = m.versionRoot;
+  window.__manifest = m;
+  document.getElementById("dlManifest").disabled = false;
 });
+document.getElementById("dlManifest").onclick = () => {
+  const m = window.__manifest;
+  if (!m) return;
+  const blob = new Blob([JSON.stringify(m, null, 2) + "\n"], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${m.versionRoot}.json`;
+  a.click();
+};
 
 const connect = document.getElementById("connect");
 const anchor = document.getElementById("anchor");
@@ -166,7 +188,8 @@ connect.onclick = async () => {
 anchor.onclick = async () => {
   if (!window.__vr) { txInfo.innerHTML = '<span class="bad">请先完成 1–4 步</span>'; return; }
   try {
-    const { createWalletClient, createPublicClient, custom, http, encodeFunctionData } = await import("https://esm.sh/viem@2");
+    txInfo.innerHTML = "正在加载钱包库（esm.sh viem，首次约 5–10 秒）…";
+    const { createWalletClient, custom, encodeFunctionData } = await import("https://esm.sh/viem@2");
     const wc = createWalletClient({ chain: { id: CFG.chainId, name: "monad-testnet", nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 }, rpcUrls: { default: { http: [CFG.rpc] } } }, transport: custom(window.__wallet) });
     const [account] = await wc.getAddresses();
     const data = encodeFunctionData({
