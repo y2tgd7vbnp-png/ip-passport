@@ -1,0 +1,8 @@
+{
+  "chainId": 31337,
+  "deployedAt": "2026-11-21T08:51:02.983Z",
+  "contracts": {
+    "IPPassportRegistry": "0x8a791620dd6260079bf849dc5567adc3f2fdc318",
+    "ExampleSkillMarket": "0x610178da211fef7d417bc0e6fed39f05609ad788"
+  }
+}

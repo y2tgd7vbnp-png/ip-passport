@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "disclaimer": "本提示依据作者在链上声明的许可状态自动生成，仅供参考，不构成法律意见。",
+  "disclaimerEn": "This notice is generated automatically from the licence status declared on-chain by the author. For reference only; not legal advice.",
+  "unspecified": {
+    "policy": "UNSPECIFIED",
+    "riskLevel": "UNKNOWN",
+    "obligations": ["未声明许可时默认保留全部权利，使用前须取得作者许可"],
+    "obligationsEn": ["No licence declared: all rights are reserved by default; obtain the author's permission before use"],
+    "needsCommercialLicense": "LIKELY"
+  },
+  "rules": [
+    {
+      "spdx": "MIT",
+      "policy": "PERMISSIVE",
+      "riskLevel": "LOW",
+      "obligations": ["保留版权声明和许可文本"],
+      "obligationsEn": ["Retain the copyright notice and licence text"],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "Apache-2.0",
+      "policy": "PERMISSIVE",
+      "riskLevel": "LOW",
+      "obligations": [
+        "保留版权声明、许可文本和 NOTICE 文件",
+        "修改过的文件需注明修改",
+        "含专利许可条款"
+      ],
+      "obligationsEn": [
+        "Retain copyright notice, licence text and NOTICE file",
+        "State significant changes made to files",
+        "Includes patent licence provisions"
+      ],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "BSD-3-Clause",
+      "policy": "PERMISSIVE",
+      "riskLevel": "LOW",
+      "obligations": [
+        "保留版权声明和许可文本",
+        "未经许可不得用原作者名义背书"
+      ],
+      "obligationsEn": [
+        "Retain the copyright notice and licence text",
+        "Do not use contributors' names for endorsement without permission"
+      ],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "MPL-2.0",
+      "policy": "WEAK_COPYLEFT",
+      "riskLevel": "MEDIUM",
+      "obligations": ["修改过的 MPL 文件须以 MPL 开源", "可与其他代码组合"],
+      "obligationsEn": ["Files modified under MPL must remain MPL-licensed", "May be combined with other code"],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "LGPL-3.0-only",
+      "aliases": ["LGPL-3.0-or-later", "LGPL-3.0"],
+      "policy": "WEAK_COPYLEFT",
+      "riskLevel": "MEDIUM",
+      "obligations": [
+        "修改库本身须以 LGPL 开源",
+        "须允许用户替换或重新链接该库"
+      ],
+      "obligationsEn": [
+        "Modified library itself must be LGPL-licensed",
+        "Users must be able to replace or relink the library"
+      ],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "GPL-3.0-only",
+      "aliases": ["GPL-3.0-or-later", "GPL-3.0"],
+      "policy": "STRONG_COPYLEFT",
+      "riskLevel": "MEDIUM",
+      "obligations": [
+        "分发衍生作品时须以 GPL 提供完整源代码",
+        "仅作为服务运行且不分发时一般不触发"
+      ],
+      "obligationsEn": [
+        "Distribute complete corresponding source code under GPL when distributing derivatives",
+        "Generally not triggered when running as a service without distribution"
+      ],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "AGPL-3.0-only",
+      "aliases": ["AGPL-3.0-or-later", "AGPL-3.0"],
+      "policy": "NETWORK_COPYLEFT",
+      "riskLevel": "HIGH",
+      "obligations": ["修改后通过网络向用户提供服务，也须向这些用户提供源代码"],
+      "obligationsEn": ["If you modify and offer it over a network, you must offer the source code to those users"],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "CC-BY-4.0",
+      "policy": "PERMISSIVE",
+      "riskLevel": "LOW",
+      "obligations": ["署名、注明许可、说明是否修改", "不推荐用于软件"],
+      "obligationsEn": ["Attribution, indicate the licence and changes", "Not recommended for software"],
+      "needsCommercialLicense": "NO"
+    },
+    {
+      "spdx": "CC-BY-NC-4.0",
+      "policy": "NONCOMMERCIAL",
+      "riskLevel": "HIGH",
+      "obligations": ["禁止商业使用，商业化须另行取得授权"],
+      "obligationsEn": ["Commercial use is prohibited; obtain a separate commercial licence"],
+      "needsCommercialLicense": "LIKELY"
+    },
+    {
+      "spdx": "BUSL-1.1",
+      "policy": "SOURCE_AVAILABLE",
+      "riskLevel": "HIGH",
+      "obligations": ["生产使用受“附加使用授权”和变更日期限制，须查看具体条款"],
+      "obligationsEn": ["Production use is subject to the Additional Use Grant and change date; review the terms"],
+      "needsCommercialLicense": "CHECK_TERMS"
+    }
+  ]
+}

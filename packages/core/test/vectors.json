@@ -1,0 +1,46 @@
+{
+  "comment": "固定测试向量：Node 与浏览器两端用同一组验证（需求 14）。所有值可用 python3 hashlib 复算。",
+  "sha256": [
+    {
+      "inputHex": "0x",
+      "expected": "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "inputHex": "0x61",
+      "expected": "0xca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"
+    },
+    {
+      "inputUtf8": "IPP-V1",
+      "expected": "0xe63d0eaf271c1c87aee44be1d48e1691c97f4337fb7a9bfbf83e02039cd25210"
+    }
+  ],
+  "leaf": [
+    {
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000001",
+      "fileDigest": "0x0100000000000000000000000000000000000000000000000000000000000002",
+      "expected": "0xaad20a24478b31d7de9b52404e826570412e145ea3c338fa128cd7122cfb8f81"
+    }
+  ],
+  "canonicalJson": [
+    {
+      "input": {
+        "b": 2,
+        "a": 1
+      },
+      "expected": "{\"a\":1,\"b\":2}"
+    },
+    {
+      "input": {
+        "z": {
+          "y": [
+            3,
+            1
+          ],
+          "x": "s"
+        },
+        "a": null
+      },
+      "expected": "{\"a\":null,\"z\":{\"x\":\"s\",\"y\":[3,1]}}"
+    }
+  ]
+}

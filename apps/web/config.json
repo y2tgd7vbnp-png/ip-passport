@@ -1,0 +1,9 @@
+{
+  "monadRpc": "https://testnet-rpc.monad.xyz",
+  "monadChainId": 10143,
+  "monadExplorer": "https://testnet.monadexplorer.com",
+  "registryAddress": "0x22b770e03e986b1133a209a3de09438716ef183d",
+  "presetRepoKeys": {
+    "github.com/iris/ip-passport-demo": "0xbfa86829c4d8bb702f71a1c4903a96d52c3b2c1b35f26c1dddd4719ab9c7e988"
+  }
+}

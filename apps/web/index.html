@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IP Passport · 知识产权护照</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
+<style>
+  :root { --ink:#1a1a1a; --teal:#1F5C73; --bg:#fafafa; --ok:#0a7d33; --bad:#b91c1c; --line:#e5e7eb; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); margin:0; }
+  header { background:var(--teal); color:#fff; padding:2.2rem 1.5rem 1.8rem; }
+  header h1 { margin:0 0 .35rem; font-size:1.7rem; }
+  header p { margin:0; opacity:.85; font-size:.95rem; }
+  nav { display:flex; gap:1rem; padding:0 1.5rem; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:9; }
+  nav a { padding:.9rem .2rem; color:#555; text-decoration:none; font-size:.95rem; border-bottom:2.5px solid transparent; }
+  nav a.on { color:var(--teal); border-bottom-color:var(--teal); font-weight:600; }
+  nav .lang { margin-left:auto; align-self:center; font-size:.85rem; }
+  main { max-width:860px; margin:0 auto; padding:1.6rem 1.5rem 4rem; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:1.4rem 1.5rem; margin-bottom:1.2rem; }
+  h2 { font-size:1.15rem; margin:0 0 .8rem; color:var(--teal); }
+  .steps { display:flex; gap:.6rem; flex-wrap:wrap; margin:.4rem 0 1rem; }
+  .step { flex:1; min-width:200px; background:#f0f7fa; border-radius:10px; padding:.9rem 1rem; font-size:.88rem; }
+  .step b { color:var(--teal); display:block; margin-bottom:.3rem; font-size:.95rem; }
+  input[type=text], input[type=number] { width:100%; padding:.6rem .8rem; border:1px solid var(--line); border-radius:8px; font-size:.95rem; }
+  .btn { display:inline-block; background:var(--teal); color:#fff; border:none; border-radius:8px; padding:.6rem 1.3rem; font-size:.95rem; cursor:pointer; margin-top:.7rem; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  #drop { border:2px dashed #9db8c4; border-radius:12px; padding:2.2rem 1rem; text-align:center; color:#587; cursor:pointer; transition:.15s; }
+  #drop.over { background:#eaf3f7; border-color:var(--teal); }
+  .timeline { list-style:none; padding:0; margin:0; }
+  .timeline li { padding:.75rem 0; border-bottom:1px solid var(--line); font-size:.92rem; }
+  .timeline li:last-child { border-bottom:none; }
+  .ok { color:var(--ok); font-weight:600; } .bad { color:var(--bad); font-weight:600; }
+  .muted { color:#789; font-size:.85rem; }
+  .disc { font-size:.78rem; color:#90a; background:#f7f4fa; border-radius:8px; padding:.6rem .8rem; margin-top:1rem; }
+  .kv { display:grid; grid-template-columns:130px 1fr; gap:.4rem .8rem; font-size:.92rem; margin:.6rem 0; }
+  .kv b { color:#456; font-weight:600; }
+  .oblig { background:#f0f7fa; border-radius:8px; padding:.7rem 1rem; margin:.4rem 0; font-size:.9rem; }
+  .risk-LOW{color:var(--ok)} .risk-MEDIUM{color:#a16207} .risk-HIGH{color:var(--bad)} .risk-UNKNOWN{color:#789}
+  a.txlink { color:var(--teal); text-decoration:underline; word-break:break-all; }
+  .banner { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; padding:.7rem 1rem; border-radius:10px; font-size:.85rem; margin-bottom:1rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>IP Passport · 知识产权护照</h1>
+  <p id="tagline">本地优先的创作过程存证与许可状态层 —— 原文件不出本机，链上只有指纹；商业化之前可查每个时间点的许可义务。</p>
+</header>
+<nav>
+  <a href="/verify" data-page="verify" id="nav-verify">验证证据包</a>
+  <a href="/check" data-page="check" id="nav-check">许可查询</a>
+  <span class="lang"><a href="#" id="lang">EN</a></span>
+</nav>
+<main id="app"></main>
+
+<script type="module">
+// ───────────────── 环境配置 ─────────────────
+const CFG = {
+  rpc: (window.monadRpc) || "https://testnet-rpc.monad.xyz",
+  chainId: (window.monadChainId) || 10143,
+  explorer: (window.monadExplorer) || "https://testnet.monadexplorer.com",
+  registry: (window.registryAddress) || "", // 由 config.js 注入
+};
+try {
+  const cfgResp = await fetch('./config.json');
+  if (cfgResp.ok) {
+    const cfg = await cfgResp.json();
+    if (cfg.monadRpc) CFG.rpc = cfg.monadRpc;
+    if (cfg.monadChainId) CFG.chainId = cfg.monadChainId;
+    if (cfg.monadExplorer) CFG.explorer = cfg.monadExplorer;
+    if (cfg.registryAddress) CFG.registry = cfg.registryAddress;
+    window.presetRepoKeys = cfg.presetRepoKeys || {};
+  }
+} catch {}
+
+const I18N = {
+  zh: {
+    steps: ["① 本地存证", "② 按需披露", "③ 商业化前查询"],
+    verifyIntro: "拖入 ipp export 生成的证据包 zip。文件在浏览器本地解包并重算哈希 —— 不会上传任何文件。",
+    verifyBtn: "开始验证",
+    verifyDrop: "拖入 evidence-*.zip，或点击选择文件",
+    chainTitle: "版本时间线",
+    disclosedTitle: "披露文件",
+    licenseTitle: "各时间点许可",
+    checkIntro: "输入 workId 或 GitHub 仓库地址，查询当前/历史时间点的许可状态与商业化义务提示。",
+    checkBtn: "查询",
+    checkAt: "查询时间点（Unix 秒，留空=现在）",
+    obligations: "义务提示",
+    risk: "风险等级",
+    commercial: "商用授权",
+    contact: "联系方式",
+    effFrom: "生效自",
+    verified: "已验证归属",
+    unverified: "未验证",
+    disclaimer: "本提示依据作者在链上声明的许可状态自动生成，仅供参考，不构成法律意见。",
+    hashOk: "哈希一致", hashBad: "不一致",
+    onchain: "链上存在", nochain: "链不可达（离线验证模式）",
+    currentLic: "当时许可",
+  },
+  en: {
+    steps: ["① Local attestation", "② Selective disclosure", "③ Pre-commercialisation check"],
+    verifyIntro: "Drop the evidence zip exported by ipp export. Files are unpacked & re-hashed locally in your browser — nothing is uploaded.",
+    verifyBtn: "Verify",
+    verifyDrop: "Drop evidence-*.zip here, or click to choose",
+    chainTitle: "Version timeline",
+    disclosedTitle: "Disclosed files",
+    licenseTitle: "Licence at each point",
+    checkIntro: "Enter a workId or GitHub repo to query the licence status and commercialisation obligations at any point in time.",
+    checkBtn: "Query",
+    checkAt: "Timestamp (unix seconds, empty = now)",
+    obligations: "Obligations",
+    risk: "Risk",
+    commercial: "Commercial licence",
+    contact: "Contact",
+    effFrom: "Effective from",
+    verified: "Ownership verified",
+    unverified: "Unverified",
+    disclaimer: "This notice is generated automatically from the licence status declared on-chain by the author. For reference only; not legal advice.",
+    hashOk: "hash matches", hashBad: "MISMATCH",
+    onchain: "on-chain", nochain: "chain unreachable (offline mode)",
+    currentLic: "Licence then",
+  },
+};
+let LANG = "zh";
+const t = (k) => I18N[LANG][k] ?? k;
+
+// ───────────────── 哈希（WebCrypto）─────────────────
+const enc = new TextEncoder();
+async function sha256(bytes) {
+  const buf = await crypto.subtle.digest("SHA-256", bytes);
+  return new Uint8Array(buf);
+}
+function hex(b) { return "0x" + [...b].map(x => x.toString(16).padStart(2, "0")).join(""); }
+function unhex(h) { h = h.replace(/^0x/, ""); const out = new Uint8Array(h.length / 2); for (let i = 0; i < out.length; i++) out[i] = parseInt(h.substr(i * 2, 2), 16); return out; }
+function cmp(a, b) { for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return a[i] - b[i]; return a.length - b.length; }
+
+// 需求 5.1：leaf = SHA256(0x00 ‖ salt ‖ fileDigest)
+async function leafOf(saltHex, digestHex) {
+  return hex(await sha256(new Uint8Array([0x00, ...unhex(saltHex), ...unhex(digestHex)])));
+}
+// 需求 5.2：内部节点 SHA256(0x01 ‖ min ‖ max)
+async function internalNode(a, b) {
+  const [lo, hi] = cmp(unhex(a), unhex(b)) <= 0 ? [a, b] : [b, a];
+  return hex(await sha256(new Uint8Array([0x01, ...unhex(lo), ...unhex(hi)])));
+}
+async function verifyMerkle(leaf, proof, root) {
+  let cur = leaf;
+  for (const s of proof) cur = await internalNode(cur, s);
+  return cur.toLowerCase() === root.toLowerCase();
+}
+// 需求 5.3：versionRoot = SHA256("IPP-V1" ‖ workId ‖ prev ‖ fileRoot ‖ metaHash)
+function canon(o) {
+  if (Array.isArray(o)) return o.map(canon);
+  if (o && typeof o === "object") {
+    const r = {}; for (const k of Object.keys(o).sort()) if (o[k] !== undefined) r[k] = canon(o[k]); return r;
+  } return o;
+}
+async function metaHashOf(meta) {
+  return hex(await sha256(enc.encode(JSON.stringify(canon(meta)))));
+}
+async function versionRootOf(workId, prev, fileRoot, metaHash) {
+  const p = /^0x0*$/.test(prev ?? "") ? "0x" + "0".repeat(64) : prev;
+  return hex(await sha256(new Uint8Array([...enc.encode("IPP-V1"), ...unhex(workId), ...unhex(p), ...unhex(fileRoot), ...unhex(metaHash)])));
+}
+
+// ───────────────── zip 解析 ─────────────────
+let JSZip = window.JSZip;
+if (!JSZip) {
+  await new Promise((res, rej) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+    sc.onload = res; sc.onerror = rej;
+    document.head.appendChild(sc);
+  });
+  JSZip = window.JSZip;
+}
+
+// ───────────────── 链读取（最小 RPC）─────────────────
+async function rpc(method, params) {
+  const r = await fetch(CFG.rpc, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }) });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.result;
+}
+const keccakSelCache = {};
+async function fnSel(sig) {
+  // 用 keccak256 前 4 字节——浏览器无内置 keccak，取巧：预置 selectors（getVersion/getLicenseAt）
+  const PRESET = {
+    "getVersion(bytes32)": "0x9aaf9f08",
+    "getLicenseAt(bytes32,uint64)": "0x2abaaac2",
+    "getWorksByRepo(bytes32)": "0xbc625059",
+    "getWork(bytes32)": "0x30266537",
+  };
+  if (PRESET[sig]) return PRESET[sig];
+  throw new Error("selector not preset: " + sig);
+}
+async function callContract(sig, args) {
+  const data = (await fnSel(sig)) + args.map(a => a.replace(/^0x/, "").padStart(64, "0")).join("");
+  return rpc("eth_call", [{ to: CFG.registry, data }, "latest"]);
+}
+// 简易 RLP-free 解码：跳过 header，找 string/uint64
+function decodeTuple(raw) {
+  // 返回数组：把返回数据粗解为各字段（针对本合约固定结构够用）
+  const b = unhex(raw);
+  const out = [];
+  let i = 0;
+  function readDyn() { // 读偏移风格
+    const len = Number(new DataView(b.buffer, b.byteOffset + i, 32).getBigUint64(0)) || 0n;
+    return null;
+  }
+  return { raw: b, first32: hex(b.slice(0, 32)) };
+}
+
+// ───────────────── 页面路由 ─────────────────
+const app = document.getElementById("app");
+const navs = { verify: document.getElementById("nav-verify"), check: document.getElementById("nav-check") };
+function setPage(name) {
+  for (const k in navs) navs[k].classList.toggle("on", k === name);
+  history.replaceState(null, "", name === "verify" ? "/verify" : "/check");
+  if (name === "verify") renderVerify(); else renderCheck();
+}
+navs.verify.onclick = (e) => { e.preventDefault(); setPage("verify"); };
+navs.check.onclick = (e) => { e.preventDefault(); setPage("check"); };
+document.getElementById("lang").onclick = (e) => { e.preventDefault(); LANG = LANG === "zh" ? "en" : "zh"; e.target.textContent = LANG === "zh" ? "EN" : "中文"; setPage(location.pathname.includes("check") ? "check" : "verify"); };
+
+function stepsHtml() {
+  return `<div class="steps">${I18N[LANG].steps.map(s => `<div class="step"><b>${s.split(" ")[0]}</b>${s.split(" ").slice(1).join(" ")}</div>`).join("")}</div>`;
+}
+function disclaimerHtml() { return `<div class="disc">⚖️ ${t("disclaimer")}</div>`; }
+
+// ───────────────── /verify 页 ─────────────────
+function renderVerify() {
+  app.innerHTML = `
+    <div class="card">
+      <h2>${t("verifyIntro").split("。")[0]}</h2>
+      ${stepsHtml()}
+      <div id="drop">${t("verifyDrop")}</div>
+      <input type="file" id="finput" accept=".zip" hidden>
+      <div id="result"></div>
+    </div>`;
+  const drop = document.getElementById("drop");
+  const fi = document.getElementById("finput");
+  drop.onclick = () => fi.click();
+  drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) verifyZip(e.dataTransfer.files[0]); };
+  fi.onchange = () => fi.files[0] && verifyZip(fi.files[0]);
+}
+
+async function verifyZip(file) {
+  const result = document.getElementById("result");
+  result.innerHTML = `<div class="card"><h2>⏳ ${LANG === "zh" ? "本地重算中…" : "Recomputing locally…"}</h2></div>`;
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const chain = JSON.parse(await zip.file("chain.json").async("string"));
+    const manifests = JSON.parse(await zip.file("manifest-chain.json").async("string"));
+    const proofs = JSON.parse(await zip.file("proofs.json").async("string"));
+    let allOk = true;
+    let html = "";
+
+    for (const m of manifests) {
+      const mh = await metaHashOf(m.meta);
+      const vr = await versionRootOf(m.workId, m.prevVersionRoot, m.fileRoot, mh);
+      const ok = vr === m.versionRoot; allOk = allOk && ok;
+      // 链上核对（可达时）
+      let chainLine = `<span class="muted">${t("nochain")}</span>`;
+      try {
+        const raw = await callContract("getVersion(bytes32)", [m.versionRoot]);
+        if (raw && raw !== "0x") {
+          const nonzero = /^0x0*$/.test(raw);
+          chainLine = `<span class="${nonzero ? "bad" : "ok"}">${t("onchain")}${nonzero ? " ✗" : " ✓"}</span>`;
+          if (nonzero) allOk = false;
+        }
+      } catch { /* 离线模式 */ }
+      const tx = m.anchor?.txHash ? ` · <a class="txlink" target="_blank" href="${CFG.explorer}/tx/${m.anchor.txHash}">${m.anchor.txHash.slice(0, 18)}…</a>` : "";
+      html += `<li><b>${m.meta.kind}</b> ${m.meta.createdAtLocal}<br>
+        ${t("hashOk")} ${ok ? `<span class="ok">✓</span>` : `<span class="bad">✗</span>`} · ${chainLine}${tx}</li>`;
+    }
+
+    let disHtml = "";
+    if (proofs.length) {
+      disHtml += `<h2>${t("disclosedTitle")}</h2><ul class="timeline">`;
+      for (const p of proofs) {
+        const m = manifests.find(mm => mm.versionRoot === p.versionRoot);
+        const fname = p.path.split("/").pop();
+        const f = zip.file(`disclosed/${p.versionRoot}/${fname}`);
+        let ok = false;
+        if (f && m) {
+          const digest = hex(await sha256(new Uint8Array(await f.async("arraybuffer"))));
+          const leaf = await leafOf(p.salt, digest);
+          ok = leaf === p.leaf && (await verifyMerkle(leaf, p.proof, m.fileRoot));
+        }
+        allOk = allOk && ok;
+        disHtml += `<li>${fname} — ${ok ? `<span class="ok">✓ ${t("hashOk")}（Merkle ✓）</span>` : `<span class="bad">✗ ${t("hashBad")}</span>`}</li>`;
+      }
+      disHtml += `</ul>`;
+    }
+
+    result.innerHTML = `<div class="card">
+      <h2>${t("chainTitle")}</h2>
+      <ul class="timeline">${html}</ul>
+      ${disHtml}
+      <div class="card" style="background:${allOk ? "#f0fdf4" : "#fef2f2"};border-color:${allOk ? "#bbf7d0" : "#fecaca"}">
+        <h2 style="color:${allOk ? "var(--ok)" : "var(--bad)"}">${allOk ? "✓ " + (LANG === "zh" ? "全部验证通过" : "All checks passed") : "✗ " + (LANG === "zh" ? "存在不一致项" : "Mismatches found")}</h2>
+        <span class="muted">${LANG === "zh" ? "文件未离开浏览器 · " : "Files never left your browser · "}</span>
+      </div>
+      ${disclaimerHtml()}
+    </div>`;
+  } catch (e) {
+    result.innerHTML = `<div class="card"><h2 class="bad">✗ ${e.message}</h2><p class="muted">${LANG === "zh" ? "请确认这是 ipp export 生成的证据包" : "Make sure this is an evidence zip exported by ipp export"}</p></div>`;
+  }
+}
+
+// ───────────────── /check 页 ─────────────────
+const SPDX_RULES = {
+  "MIT": { policy: "PERMISSIVE", risk: "LOW", ob: { zh: ["保留版权声明和许可文本"], en: ["Retain copyright notice and licence text"] }, nc: "NO" },
+  "Apache-2.0": { policy: "PERMISSIVE", risk: "LOW", ob: { zh: ["保留版权声明、许可文本和 NOTICE 文件", "修改过的文件需注明修改", "含专利许可条款"], en: ["Retain copyright, licence text and NOTICE", "State significant changes", "Includes patent licence provisions"] }, nc: "NO" },
+  "BSD-3-Clause": { policy: "PERMISSIVE", risk: "LOW", ob: { zh: ["保留版权声明和许可文本", "未经许可不得用原作者名义背书"], en: ["Retain copyright and licence text", "No endorsement using authors' names"] }, nc: "NO" },
+  "MPL-2.0": { policy: "WEAK_COPYLEFT", risk: "MEDIUM", ob: { zh: ["修改过的 MPL 文件须以 MPL 开源", "可与其他代码组合"], en: ["Modified MPL files stay MPL", "May combine with other code"] }, nc: "NO" },
+  "LGPL-3.0-only": { policy: "WEAK_COPYLEFT", risk: "MEDIUM", ob: { zh: ["修改库本身须以 LGPL 开源", "须允许用户替换或重新链接"], en: ["Modified library stays LGPL", "Allow relinking/replacement"] }, nc: "NO" },
+  "GPL-3.0-only": { policy: "STRONG_COPYLEFT", risk: "MEDIUM", ob: { zh: ["分发衍生作品时须以 GPL 提供完整源代码", "仅作为服务运行且不分发时一般不触发"], en: ["Provide full source under GPL when distributing", "SaaS-only use generally not triggered"] }, nc: "NO" },
+  "AGPL-3.0-only": { policy: "NETWORK_COPYLEFT", risk: "HIGH", ob: { zh: ["修改后通过网络提供服务，也须向用户提供源代码"], en: ["Network use requires offering source to users"] }, nc: "NO" },
+  "CC-BY-4.0": { policy: "PERMISSIVE", risk: "LOW", ob: { zh: ["署名、注明许可、说明是否修改"], en: ["Attribution, indicate licence & changes"] }, nc: "NO" },
+  "CC-BY-NC-4.0": { policy: "NONCOMMERCIAL", risk: "HIGH", ob: { zh: ["禁止商业使用，商业化须另行取得授权"], en: ["No commercial use; separate licence needed"] }, nc: "LIKELY" },
+  "BUSL-1.1": { policy: "SOURCE_AVAILABLE", risk: "HIGH", ob: { zh: ["生产使用受「附加使用授权」和变更日期限制，须查看具体条款"], en: ["Production use subject to Additional Use Grant & change date"] }, nc: "CHECK_TERMS" },
+};
+function ruleFor(spdx, hasTerms) {
+  if (!spdx) return { policy: "UNSPECIFIED", risk: "UNKNOWN", ob: { zh: ["未声明许可时默认保留全部权利，使用前须取得作者许可"], en: ["All rights reserved by default; ask the author"] }, nc: "LIKELY" };
+  if (hasTerms && spdx === "NOASSERTION") return { policy: "PROPRIETARY", risk: "HIGH", ob: { zh: ["按作者登记的条款执行"], en: ["Follow the author's registered terms"] }, nc: "CHECK_TERMS" };
+  return SPDX_RULES[spdx] ?? { policy: "UNSPECIFIED", risk: "UNKNOWN", ob: { zh: [`未识别的许可标识 ${spdx}，请人工核对`], en: [`Unknown SPDX ${spdx}`] }, nc: "LIKELY" };
+}
+
+function renderCheck() {
+  app.innerHTML = `
+    <div class="card">
+      <h2>${t("checkIntro")}</h2>
+      <input type="text" id="qid" placeholder="0x… ${LANG === "zh" ? "或 github.com/owner/repo" : "or github.com/owner/repo"}">
+      <p class="muted" style="margin:.6rem 0 .3rem">${t("checkAt")}</p>
+      <input type="text" id="qat" placeholder="">
+      <button class="btn" id="qbtn">${t("checkBtn")}</button>
+      <div id="qres"></div>
+      ${disclaimerHtml()}
+    </div>`;
+  document.getElementById("qbtn").onclick = doCheck;
+}
+
+async function doCheck() {
+  const res = document.getElementById("qres");
+  const id = document.getElementById("qid").value.trim();
+  const at = document.getElementById("qat").value.trim();
+  if (!id) return;
+  res.innerHTML = `<p class="muted">⏳ ${LANG === "zh" ? "查询链上…" : "Querying chain…"}</p>`;
+  try {
+    let workId = id;
+    if (id.startsWith("github.com/")) {
+      // repoKey = keccak256(小写 repo) —— 浏览器算不了 keccak，从预置映射查（演示数据）
+      const PRESET_REPO = window.presetRepoKeys || {};
+      const key = id.toLowerCase();
+      if (!(key in PRESET_REPO)) throw new Error(LANG === "zh" ? `该仓库未预置 repoKey 映射（浏览器端无法计算 keccak256）。请直接输入 workId。` : `No preset repoKey for this repo (browser cannot keccak256). Use workId directly.`);
+      const repoKey = PRESET_REPO[key];
+      // getWorksByRepo(bytes32) → bytes32[]（跳过 offset 头，取 count 与元素）
+      const rawWorks = await callContract("getWorksByRepo(bytes32)", [repoKey]);
+      const bw = unhex(rawWorks);
+      const dw = new DataView(bw.buffer, bw.byteOffset);
+      const cnt = Number(dw.getBigUint64(32 + 24));
+      if (!cnt) throw new Error(LANG === "zh" ? "该仓库暂无已注册作品" : "No works registered for this repo");
+      workId = hex(bw.slice(64, 96));
+    }
+    // getLicenseAt(bytes32,uint64)
+    const ts = at ? Number(at) : Math.floor(Date.now() / 1000);
+    const tsHex = ts.toString(16).padStart(64, "0");
+    const raw = await callContract("getLicenseAt(bytes32,uint64)", [workId, tsHex]);
+    if (!raw || raw === "0x") throw new Error(LANG === "zh" ? "链上无此作品或未设许可" : "Unknown work or no licence on-chain");
+    const dec = decodeLicenseReturn(raw);
+    const r = ruleFor(dec.spdx, dec.termsHash !== "0x" + "0".repeat(64));
+    const ncLabel = { NO: LANG === "zh" ? "无需" : "NO", LIKELY: LANG === "zh" ? "很可能需要" : "LIKELY", CHECK_TERMS: LANG === "zh" ? "需查看条款" : "CHECK_TERMS" }[r.nc];
+    res.innerHTML = `
+      <div class="kv">
+        <b>workId</b><span style="word-break:break-all">${workId}</span>
+        <b>${LANG === "zh" ? "许可" : "Licence"}</b><span>${dec.spdx || "（未声明）"} <span class="muted">(${r.policy})</span></span>
+        <b>${t("effFrom")}</b><span>${new Date(Number(dec.effectiveFrom) * 1000).toLocaleString(LANG === "zh" ? "zh-CN" : "en-US")}</span>
+        ${dec.contactURI ? `<b>${t("contact")}</b><span>${dec.contactURI}</span>` : ""}
+        <b>${t("risk")}</b><span class="risk-${r.risk}">${r.risk}</span>
+        <b>${t("commercial")}</b><span>${ncLabel}</span>
+      </div>
+      <h2 style="margin-top:1rem">${t("obligations")}</h2>
+      ${r.ob[LANG].map(o => `<div class="oblig">• ${o}</div>`).join("")}
+      <p class="muted">${t("currentLic")}：${new Date(ts * 1000).toLocaleString(LANG === "zh" ? "zh-CN" : "en-US")}</p>`;
+  } catch (e) {
+    res.innerHTML = `<div class="banner">✗ ${e.message}</div>`;
+  }
+}
+
+// 解码 getLicenseAt 返回（tuple: string,bytes32,uint8,string,bytes32,uint64）
+function decodeLicenseReturn(raw) {
+  const b = unhex(raw);
+  const dv = new DataView(b.buffer, b.byteOffset);
+  // 含动态字段的 struct 返回会有一层外层 offset 头（0x20），tuple 实际从 32 起
+  const base = 32;
+  const off1 = Number(dv.getBigUint64(base + 0 * 32 + 24)); // spdx 偏移（相对 tuple 起点）
+  const termsHash = hex(b.slice(base + 32, base + 64));
+  const policy = Number(dv.getBigUint64(base + 2 * 32 + 24));
+  const off2 = Number(dv.getBigUint64(base + 3 * 32 + 24));
+  const effVer = hex(b.slice(base + 4 * 32, base + 5 * 32));
+  const effectiveFrom = dv.getBigUint64(base + 5 * 32 + 24);
+  const readStr = (off) => {
+    const p = base + off;
+    const len = Number(dv.getBigUint64(p + 24));
+    return new TextDecoder().decode(b.slice(p + 32, p + 32 + len));
+  };
+  return { spdx: readStr(off1), termsHash, policy, contactURI: readStr(off2), effectiveFromVersion: effVer, effectiveFrom };
+}
+
+// 初始页
+setPage(location.pathname.includes("check") ? "check" : "verify");
+</script>
+</body>
+</html>

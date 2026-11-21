@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.ipp/
+cache/
+coverage/
+coverage.json
+typechain-types/
+deployments/*.local.json
+bench/results/
+*.log
+.DS_Store
